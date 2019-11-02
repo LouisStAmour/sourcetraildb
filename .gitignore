@@ -62,3 +62,5 @@ typings/
 
 # CMake build output
 build
+out
+.vscode

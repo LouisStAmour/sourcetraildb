@@ -1,3 +1,3 @@
-var addon = require('bindings')('build-node-addon-api-with-cmake');
+var addon = require("bindings")("sourcetrail-db");
 
 console.log(addon.hello()); // 'world'
