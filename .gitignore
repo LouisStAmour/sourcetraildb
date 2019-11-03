@@ -64,3 +64,4 @@ typings/
 build
 out
 .vscode
+.vs
