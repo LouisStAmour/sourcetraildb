@@ -135,15 +135,15 @@ Napi::Value Writer::beginTransaction(const CallbackInfo &info)
 }
 Napi::Value Writer::commitTransaction(const CallbackInfo &info)
 {
-  return Napi::Boolean::New(info.Env(), writer.beginTransaction());
+  return Napi::Boolean::New(info.Env(), writer.commitTransaction());
 }
 Napi::Value Writer::rollbackTransaction(const CallbackInfo &info)
 {
-  return Napi::Boolean::New(info.Env(), writer.beginTransaction());
+  return Napi::Boolean::New(info.Env(), writer.rollbackTransaction());
 }
 Napi::Value Writer::optimizeDatabaseMemory(const CallbackInfo &info)
 {
-  return Napi::Boolean::New(info.Env(), writer.beginTransaction());
+  return Napi::Boolean::New(info.Env(), writer.optimizeDatabaseMemory());
 }
 Napi::Value Writer::recordSymbol(const CallbackInfo &info)
 {
@@ -243,8 +243,7 @@ Napi::Value Writer::recordSymbolLocation(const CallbackInfo &info)
   {
     return Napi::Boolean::New(env, false);
   }
-  const sourcetrail::SourceRange range = sr.second;
-  bool result = writer.recordSymbolLocation(info[0].As<Number>(), range);
+  bool result = writer.recordSymbolLocation(info[0].As<Number>(), sr.second);
   return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordSymbolScopeLocation(const CallbackInfo &info)
@@ -260,8 +259,7 @@ Napi::Value Writer::recordSymbolScopeLocation(const CallbackInfo &info)
   {
     return Napi::Boolean::New(env, false);
   }
-  const sourcetrail::SourceRange range = sr.second;
-  bool result = writer.recordSymbolScopeLocation(info[0].As<Number>(), range);
+  bool result = writer.recordSymbolScopeLocation(info[0].As<Number>(), sr.second);
   return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordSymbolSignatureLocation(const CallbackInfo &info)
@@ -277,8 +275,7 @@ Napi::Value Writer::recordSymbolSignatureLocation(const CallbackInfo &info)
   {
     return Napi::Boolean::New(env, false);
   }
-  const sourcetrail::SourceRange range = sr.second;
-  bool result = writer.recordSymbolSignatureLocation(info[0].As<Number>(), range);
+  bool result = writer.recordSymbolSignatureLocation(info[0].As<Number>(), sr.second);
   return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordReference(const CallbackInfo &info)

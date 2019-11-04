@@ -20,18 +20,18 @@ console.log(
 );
 console.log("");
 
-if (process.argv.length < 5 || process.argv.length > 6) {
+if (process.argv.length < 4 || process.argv.length > 5) {
   console.log(
     "usage: cpp_api_example <database_path> <source_path> <optional:database_version>"
   );
   process.exit(0);
 }
 
-const dbPath = process.argv[3];
-const sourcePath = process.argv[4].replace("\\", "/");
+const dbPath = process.argv[2];
+const sourcePath = process.argv[3].replace("\\", "/");
 let dbVersion;
-if (process.argv.length === 6) {
-  dbVersion = parseInt(process.argv[5]);
+if (process.argv.length === 5) {
+  dbVersion = parseInt(process.argv[4]);
 }
 if (dbVersion && dbVersion !== dbWriter.getSupportedDatabaseVersion()) {
   console.error(
