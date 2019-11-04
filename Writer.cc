@@ -172,9 +172,9 @@ Napi::Value Writer::recordSymbol(const CallbackInfo &info)
       return Napi::Boolean::New(env, false);
     }
     Object nameElement = nameElementVal.As<Object>();
-    Napi::Value prefix = nameHierarchy.Get("prefix");
-    Napi::Value name = nameHierarchy.Get("name");
-    Napi::Value postfix = nameHierarchy.Get("postfix");
+    Napi::Value prefix = nameElement.Get("prefix");
+    Napi::Value name = nameElement.Get("name");
+    Napi::Value postfix = nameElement.Get("postfix");
     if (!prefix.IsString() || !name.IsString() || !postfix.IsString())
     {
       writer.setLastError("expected NameElement object to be only strings");
@@ -185,8 +185,8 @@ Napi::Value Writer::recordSymbol(const CallbackInfo &info)
   sourcetrail::NameHierarchy nh{
       nameDelimiter.As<String>(),
       neVector};
-  bool result = writer.recordSymbol(nh);
-  return Napi::Boolean::New(env, result);
+  int result = writer.recordSymbol(nh);
+  return Napi::Number::New(env, result);
 }
 Napi::Value Writer::recordSymbolDefinitionKind(const CallbackInfo &info)
 {
@@ -210,7 +210,7 @@ std::pair<bool, const sourcetrail::SourceRange> Writer::toSourceRange(Napi::Valu
   Napi::Value endColumn = obj.Get("endColumn");
   if (!fileId.IsNumber() || !startLine.IsNumber() || !startColumn.IsNumber() || !endLine.IsNumber() || !endColumn.IsNumber())
   {
-    writer.setLastError("SourceRange requires all fields to be numbers");
+    writer.setLastError("SourceRange requires all fields to be numbers.");
     sourcetrail::SourceRange sr;
     return std::pair<bool, const sourcetrail::SourceRange>{false, sr};
   }
@@ -281,66 +281,153 @@ Napi::Value Writer::recordSymbolSignatureLocation(const CallbackInfo &info)
 Napi::Value Writer::recordReference(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber())
+  {
+    writer.setLastError("recordSymbolKind() requires three parameters, all numbers");
+    return Napi::Boolean::New(env, false);
+  }
+  int kindInt = info[2].As<Number>();
+  int result = writer.recordReference(info[0].As<Number>(), info[1].As<Number>(), static_cast<sourcetrail::ReferenceKind>(kindInt));
+  return Napi::Number::New(env, result);
 }
 Napi::Value Writer::recordReferenceLocation(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsObject())
+  {
+    writer.setLastError("recordReferenceLocation() requires two parameters, the first a number, the second a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[1]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordReferenceLocation(info[0].As<Number>(), sr.second);
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordReferenceIsAmbiguous(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 1 || !info[0].IsNumber())
+  {
+    writer.setLastError("recordReferenceIsAmbiguous() requires one parameter, a number");
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordReferenceIsAmbiuous(info[0].As<Number>());
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordReferenceToUnsolvedSymhol(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 3 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsObject())
+  {
+    writer.setLastError("recordReferenceLocation() requires three parameters, the first two numbers, the second a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[2]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  int kindInt = info[1].As<Number>();
+  int result = writer.recordReferenceToUnsolvedSymhol(info[0].As<Number>(), static_cast<sourcetrail::ReferenceKind>(kindInt), sr.second);
+  return Napi::Number::New(env, result);
 }
 Napi::Value Writer::recordQualifierLocation(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsObject())
+  {
+    writer.setLastError("recordQualifierLocation() requires two parameters, the first a number, the second a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[1]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordQualifierLocation(info[0].As<Number>(), sr.second);
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordFile(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 1)
+  {
+    writer.setLastError("recordFile() requires a filePath parameter");
+    return Napi::Boolean::New(env, false);
+  }
+  int result = writer.recordFile(info[0].ToString());
+  return Napi::Number::New(env, result);
 }
 Napi::Value Writer::recordFileLanguage(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 2 || !info[0].IsNumber())
+  {
+    writer.setLastError("recordFileLanguage() requires two parameters, the first a number");
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordFileLanguage(info[0].As<Number>(), info[1].ToString());
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordLocalSymbol(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 1)
+  {
+    writer.setLastError("recordLocalSymbol() requires a name parameter");
+    return Napi::Boolean::New(env, false);
+  }
+  int result = writer.recordLocalSymbol(info[0].ToString());
+  return Napi::Number::New(env, result);
 }
 Napi::Value Writer::recordLocalSymbolLocation(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 2 || !info[0].IsNumber() || !info[1].IsObject())
+  {
+    writer.setLastError("recordLocalSymbolLocation() requires two parameters, the first a number, the second a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[1]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordLocalSymbolLocation(info[0].As<Number>(), sr.second);
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordAtomicSourceRange(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 1 || !info[0].IsObject())
+  {
+    writer.setLastError("recordAtomicSourceRange() requires one parameter, a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[0]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordAtomicSourceRange(sr.second);
+  return Napi::Boolean::New(env, result);
 }
 Napi::Value Writer::recordError(const CallbackInfo &info)
 {
   Napi::Env env = info.Env();
-  writer.setLastError("unimplemented");
-  return Napi::Boolean::New(env, false);
+  if (info.Length() < 3 || !info[1].IsBoolean() || !info[2].IsObject())
+  {
+    writer.setLastError("recordError() requires three parameters, the first a message, the second a boolean, the third a SourceRange object");
+    return Napi::Boolean::New(env, false);
+  }
+  std::pair<bool, const sourcetrail::SourceRange> sr = toSourceRange(info[2]);
+  if (!sr.first)
+  {
+    return Napi::Boolean::New(env, false);
+  }
+  bool result = writer.recordError(info[0].ToString(), info[1].As<Boolean>(), sr.second);
+  return Napi::Boolean::New(env, result);
 }

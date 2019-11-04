@@ -10,13 +10,15 @@ import bindings from "bindings";
 export class NameElement {
   constructor(name: string);
   constructor(prefix: string, name: string, postfix: string);
-  constructor(...[prefix = "", name = "", postfix = ""]: string[]) {
-    if (name === "") {
-      this.name = name;
-    } else {
+  constructor(...[prefix, name, postfix]: string[]) {
+    if (name === undefined) {
       this.name = prefix;
-      this.prefix = name;
-      this.postfix = postfix;
+      this.prefix = "";
+      this.postfix = "";
+    } else {
+      this.name = name || "";
+      this.prefix = prefix || "";
+      this.postfix = postfix || "";
     }
   }
   prefix: string = "";
