@@ -10,7 +10,7 @@ import {
   LocalSymbolId,
   ReferenceId,
   SymbolId
-} from "./index";
+} from "./src/index";
 import { exists } from "fs";
 
 const dbWriter = new Writer();

@@ -1,22 +1,33 @@
 {
-  "name": "sourcetraildb",
-  "version": "0.0.0",
-  "description": "Node.js Library to export Sourcetrail compatible database files for writing custom indexers",
-  "main": "index.ts",
-  "private": true,
+  "author": {
+    "name": "Louis St-Amour",
+    "url": "https://github.com/LouisStAmour"
+  },
   "dependencies": {
     "bindings": "1.5.0",
     "node-addon-api": "1.7.1"
   },
-  "scripts": {
-    "install": "cmake-js compile",
-    "test": "ts-node cpp_example.ts database_file.srctrldb data/example.cpp"
-  },
+  "description": "Node.js Library to export Sourcetrail compatible database files for writing custom indexers",
   "devDependencies": {
     "@types/bindings": "1.3.0",
     "@types/node": "12.12.5",
     "ts-node": "8.4.1",
     "tslib": "1.10.0",
-    "typescript": "3.6.4"
-  }
+    "typescript": "^3.6.4"
+  },
+  "homepage": "https://github.com/LouisStAmour/sourcetraildb#readme",
+  "license": "apache-2.0",
+  "main": "dist/index.js",
+  "name": "sourcetraildb",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LouisStAmour/sourcetraildb.git"
+  },
+  "scripts": {
+    "build": "tsc --project ./tsconfig.json",
+    "install": "cmake-js compile",
+    "test": "ts-node cpp_example.ts database_file.srctrldb data/example.cpp"
+  },
+  "version": "0.0.0"
 }
