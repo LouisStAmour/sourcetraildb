@@ -98,7 +98,7 @@ export declare class SourceRange {
     endLine: number;
     endColumn: number;
 }
-export declare class SourcetrailDBWriter {
+export declare class WriterType {
     constructor();
     /**
      * Provides the version of the SourcetrailDB Core as string with format "vXX.dbYY.pZZ"
@@ -518,4 +518,4 @@ export declare class SourcetrailDBWriter {
      */
     recordError(message: string, fatal: boolean, location: SourceRange): boolean;
 }
-export declare const Writer: typeof SourcetrailDBWriter;
+export declare const Writer: typeof WriterType;

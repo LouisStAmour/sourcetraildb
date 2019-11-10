@@ -140,9 +140,8 @@ export class SourceRange {
   endColumn: number;
 }
 
-export declare class SourcetrailDBWriter {
+export declare class WriterType {
   constructor();
-
   /**
    * Provides the version of the SourcetrailDB Core as string with format "vXX.dbYY.pZZ"
    *
@@ -618,4 +617,4 @@ export declare class SourcetrailDBWriter {
 
 const sdk = bindings("sourcetraildb");
 
-export const Writer = sdk.Writer as typeof SourcetrailDBWriter;
+export const Writer = sdk.Writer as typeof WriterType;
