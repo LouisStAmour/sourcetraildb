@@ -1,26 +1,11 @@
-import {
-  Writer,
-  SourceRange,
-  NameHierarchy,
-  NameElement,
-  DefinitionKind,
-  ReferenceKind,
-  SymbolKind,
-  FileId,
-  LocalSymbolId,
-  ReferenceId,
-  SymbolId
-} from "./src/index";
-import { exists } from "fs";
-
-const dbWriter = new Writer();
+import SourcetrailDB, { ReferenceKind, SymbolKind } from "./src/builder";
 
 console.log("SourcetrailDB C++ API Example");
 console.log("");
-console.log("SourcetrailDB version: ", dbWriter.getVersionString());
+console.log("SourcetrailDB version: ", SourcetrailDB.getVersionString());
 console.log(
   "Supported database version: ",
-  dbWriter.getSupportedDatabaseVersion()
+  SourcetrailDB.getSupportedDatabaseVersion()
 );
 console.log("");
 
@@ -37,201 +22,85 @@ let dbVersion;
 if (process.argv.length === 5) {
   dbVersion = parseInt(process.argv[4]);
 }
-if (dbVersion && dbVersion !== dbWriter.getSupportedDatabaseVersion()) {
+if (dbVersion && dbVersion !== SourcetrailDB.getSupportedDatabaseVersion()) {
   console.error(
     "error: binary only supports database version: ",
-    dbWriter.getSupportedDatabaseVersion(),
+    SourcetrailDB.getSupportedDatabaseVersion(),
     ". Requested version: ",
     dbVersion
   );
   process.exit(1);
 }
 
-const safely = (
-  returnValue: boolean | FileId | LocalSymbolId | ReferenceId | SymbolId
-) => {
-  if (returnValue === false || returnValue === 0) {
-    console.error("error: ", dbWriter.getLastError());
-    console.trace();
-    process.exit(1);
-  }
-  return returnValue;
-};
-
 // open database by passing .srctrldb or .srctrldb_tmp path
-console.log("Opening Database: ", dbPath);
-safely(dbWriter.open(dbPath));
+SourcetrailDB.openAndClear(dbPath, writer => {
+  console.log("Starting Indexing...");
+  // record source file by passing it's absolute path
+  const file = writer.createFile(sourcePath).asLanguage("cpp"); // for syntax highlighting
 
-console.log("Clearing Database... ");
-safely(dbWriter.clear());
+  // record atomic source range for multi line comment
+  writer.recordAtomicSourceRange(file.at(2, 1, 6, 3));
 
-console.log("Starting Indexing...");
+  // record namespace "api"
+  const namespace = writer
+    .createSymbol(".", "api")
+    .explicitly()
+    .ofType(SymbolKind.NAMESPACE)
+    .atLocation(file.at(8, 11, 8, 13))
+    .withScope(file.at(8, 1, 24, 1));
 
-// start recording with faster speed
-safely(dbWriter.beginTransaction());
+  // record class "MyType"
+  const className = namespace
+    .createChildSymbol("MyType")
+    .explicitly()
+    .ofType(SymbolKind.CLASS)
+    .atLocation(file.at(11, 7, 11, 12))
+    .withScope(file.at(11, 1, 22, 1)); // gets highlight when active
 
-// record source file by passing it's absolute path
-const fileId = safely(dbWriter.recordFile(sourcePath)) as FileId;
-safely(dbWriter.recordFileLanguage(fileId, "cpp")); // record file language for syntax highlighting
+  // record inheritance reference to "BaseType"
+  writer
+    .createSymbol(".", "BaseType")
+    .isReferencedBy(className, ReferenceKind.INHERITANCE)
+    .atLocation(file.at(12, 14, 12, 21));
 
-// record atomic source range for multi line comment
-safely(dbWriter.recordAtomicSourceRange(new SourceRange(fileId, 2, 1, 6, 3)));
+  // add child method "void my_method() const"
+  const method = className
+    .createChildSymbol("void", "my_method", "() const")
+    .explicitly()
+    .ofType(SymbolKind.METHOD)
+    .atLocation(file.at(15, 10, 15, 18))
+    .withScope(file.at(15, 5, 21, 5)) // gets highlight when active
+    .withSignature(file.at(15, 5, 15, 45)); // used in tooltip
 
-// record namespace "api"
-const namespaceName = new NameHierarchy(".", [new NameElement("api")]);
-const namespaceId = safely(dbWriter.recordSymbol(namespaceName)) as SymbolId;
-safely(
-  dbWriter.recordSymbolDefinitionKind(namespaceId, DefinitionKind.EXPLICIT)
-);
-safely(dbWriter.recordSymbolKind(namespaceId, SymbolKind.NAMESPACE));
-safely(
-  dbWriter.recordSymbolLocation(
-    namespaceId,
-    new SourceRange(fileId, 8, 11, 8, 13)
-  )
-);
-safely(
-  dbWriter.recordSymbolScopeLocation(
-    namespaceId,
-    new SourceRange(fileId, 8, 1, 24, 1)
-  )
-);
+  // record usage of parameter type "bool"
+  writer
+    .createSymbol(".", "bool")
+    .isReferencedBy(method, ReferenceKind.TYPE_USAGE)
+    .atLocation(file.at(15, 20, 15, 23));
 
-// record class "MyType"
-const className = namespaceName;
-className.nameElements.push(new NameElement("MyType"));
-const classId = safely(dbWriter.recordSymbol(className)) as SymbolId;
-safely(dbWriter.recordSymbolDefinitionKind(classId, DefinitionKind.EXPLICIT));
-safely(dbWriter.recordSymbolKind(classId, SymbolKind.CLASS));
-safely(
-  dbWriter.recordSymbolLocation(classId, new SourceRange(fileId, 11, 7, 11, 12))
-);
-safely(
-  dbWriter.recordSymbolScopeLocation(
-    classId,
-    new SourceRange(fileId, 11, 1, 22, 1)
-  )
-); // gets highlight when active
+  // record parameter "do_send_signal"
+  writer
+    .createLocalSymbol("do_send_signal")
+    .atLocation(file.at(15, 25, 15, 38))
+    .atLocation(file.at(17, 13, 17, 26));
 
-// record inheritance reference to "BaseType"
-const baseId = safely(
-  dbWriter.recordSymbol(new NameHierarchy(".", [new NameElement("BaseType")]))
-) as SymbolId;
-const inheritanceId = safely(
-  dbWriter.recordReference(classId, baseId, ReferenceKind.INHERITANCE)
-) as ReferenceId;
-safely(
-  dbWriter.recordReferenceLocation(
-    inheritanceId,
-    new SourceRange(fileId, 12, 14, 12, 21)
-  )
-);
+  // record source range of "Client" as qualifier location
+  const qualifier = writer
+    .createSymbol(".", "Client")
+    .withQualifier(file.at(19, 13, 19, 18));
 
-// add child method "void my_method() const"
-const methodName = className;
-methodName.nameElements.push(new NameElement("void", "my_method", "() const"));
-const methodId = safely(dbWriter.recordSymbol(methodName)) as SymbolId;
-safely(dbWriter.recordSymbolDefinitionKind(methodId, DefinitionKind.EXPLICIT));
-safely(dbWriter.recordSymbolKind(methodId, SymbolKind.METHOD));
-safely(
-  dbWriter.recordSymbolLocation(
-    methodId,
-    new SourceRange(fileId, 15, 10, 15, 18)
-  )
-);
-safely(
-  dbWriter.recordSymbolScopeLocation(
-    methodId,
-    new SourceRange(fileId, 15, 5, 21, 5)
-  )
-); // gets highlight when active
-safely(
-  dbWriter.recordSymbolSignatureLocation(
-    methodId,
-    new SourceRange(fileId, 15, 5, 15, 45)
-  )
-); // used in tooltip
+  // record function call reference to "send_signal()"
+  qualifier
+    .createChildSymbol("", "send_signal", "()")
+    .ofType(SymbolKind.FUNCTION)
+    .isReferencedBy(method, ReferenceKind.CALL)
+    .atLocation(file.at(19, 21, 19, 31));
 
-// record usage of parameter type "bool"
-const typeId = safely(
-  dbWriter.recordSymbol(
-    new NameHierarchy(".", [new NameElement("", "bool", "")])
-  )
-) as SymbolId;
-const typeuseId = safely(
-  dbWriter.recordReference(methodId, typeId, ReferenceKind.TYPE_USAGE)
-) as ReferenceId;
-safely(
-  dbWriter.recordReferenceLocation(
-    typeuseId,
-    new SourceRange(fileId, 15, 20, 15, 23)
-  )
-);
-
-// record parameter "do_send_signal"
-const localId = safely(
-  dbWriter.recordLocalSymbol("do_send_signal")
-) as SymbolId;
-safely(
-  dbWriter.recordLocalSymbolLocation(
-    localId,
-    new SourceRange(fileId, 15, 25, 15, 38)
-  )
-);
-safely(
-  dbWriter.recordLocalSymbolLocation(
-    localId,
-    new SourceRange(fileId, 17, 13, 17, 26)
-  )
-);
-
-// record source range of "Client" as qualifier location
-const qualifierId = safely(
-  dbWriter.recordSymbol(new NameHierarchy(".", [new NameElement("Client")]))
-) as SymbolId;
-safely(
-  dbWriter.recordQualifierLocation(
-    qualifierId,
-    new SourceRange(fileId, 19, 13, 19, 18)
-  )
-);
-
-// record function call reference to "send_signal()"
-const funcId = safely(
-  dbWriter.recordSymbol(
-    new NameHierarchy(".", [
-      new NameElement("Client"),
-      new NameElement("", "send_signal", "()")
-    ])
-  )
-) as SymbolId;
-safely(dbWriter.recordSymbolKind(funcId, SymbolKind.FUNCTION));
-const callId = safely(
-  dbWriter.recordReference(methodId, funcId, ReferenceKind.CALL)
-) as ReferenceId;
-safely(
-  dbWriter.recordReferenceLocation(
-    callId,
-    new SourceRange(fileId, 19, 21, 19, 31)
-  )
-);
-
-// record error
-safely(
-  dbWriter.recordError(
+  // record error
+  writer.recordError(
     'Really? You missed that ";" again? (intentional error)',
-    false,
-    new SourceRange(fileId, 22, 1, 22, 1)
-  )
-);
-
-// end recording
-safely(dbWriter.commitTransaction());
-
-// check for errors before finishing
-if (dbWriter.getLastError()) {
-  console.error("error: ", dbWriter.getLastError());
-  process.exit(1);
-}
+    file.at(22, 1, 22, 1)
+  );
+});
 
 console.log("done!");
