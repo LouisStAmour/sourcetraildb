@@ -14,6 +14,8 @@ export default class WriterBuilder {
     createSymbol(nameHierarchy: i.NameHierarchy): SymbolBuilder;
     createSymbol(name: string): SymbolBuilder;
     createSymbol(nameDelimiter: string, name: string): SymbolBuilder;
+    createSymbol(nameDelimiter: string, nameElements: string[]): SymbolBuilder;
+    createSymbol(nameDelimiter: string, nameElements: string[][]): SymbolBuilder;
     createSymbol(nameDelimiter: string, nameElements: i.NameElement[]): SymbolBuilder;
     createSymbol(prefix: string, name: string, postfix: string): SymbolBuilder;
     createSymbol(nameDelimiter: string, prefix: string, name: string, postfix: string): SymbolBuilder;
@@ -106,6 +108,8 @@ export declare class SymbolBuilder {
     constructor(writer: i.WriterType, nameHierarchy: i.NameHierarchy);
     constructor(writer: i.WriterType, name: string);
     constructor(writer: i.WriterType, nameDelimiter: string, name: string);
+    constructor(writer: i.WriterType, nameDelimiter: string, nameElements: string[]);
+    constructor(writer: i.WriterType, nameDelimiter: string, nameElements: string[][]);
     constructor(writer: i.WriterType, nameDelimiter: string, nameElements: i.NameElement[]);
     constructor(writer: i.WriterType, prefix: string, name: string, postfix: string);
     constructor(writer: i.WriterType, nameDelimiter: string, prefix: string, name: string, postfix: string);

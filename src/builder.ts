@@ -72,6 +72,8 @@ export default class WriterBuilder {
   createSymbol(nameHierarchy: i.NameHierarchy): SymbolBuilder;
   createSymbol(name: string): SymbolBuilder;
   createSymbol(nameDelimiter: string, name: string): SymbolBuilder;
+  createSymbol(nameDelimiter: string, nameElements: string[]): SymbolBuilder;
+  createSymbol(nameDelimiter: string, nameElements: string[][]): SymbolBuilder;
 
   createSymbol(
     nameDelimiter: string,
@@ -340,6 +342,16 @@ export class SymbolBuilder {
   constructor(
     writer: i.WriterType,
     nameDelimiter: string,
+    nameElements: string[]
+  );
+  constructor(
+    writer: i.WriterType,
+    nameDelimiter: string,
+    nameElements: string[][]
+  );
+  constructor(
+    writer: i.WriterType,
+    nameDelimiter: string,
     nameElements: i.NameElement[]
   );
   constructor(
@@ -374,6 +386,27 @@ export class SymbolBuilder {
         this.nameHierarchy = new i.NameHierarchy(nameDelimiter, [
           new i.NameElement(nameElements)
         ]);
+      } else if (
+        nameElements &&
+        nameElements.length > 0 &&
+        typeof nameElements[0] === "string"
+      ) {
+        this.nameHierarchy = new i.NameHierarchy(
+          nameDelimiter,
+          nameElements.map(n => new i.NameElement(n))
+        );
+      } else if (
+        nameElements &&
+        nameElements.length > 0 &&
+        nameElements[0].length > 0
+      ) {
+        this.nameHierarchy = new i.NameHierarchy(
+          nameDelimiter,
+          nameElements.map(
+            ([prefix, name, postfix]) =>
+              new i.NameElement(prefix, name, postfix)
+          )
+        );
       } else {
         this.nameHierarchy = new i.NameHierarchy(nameDelimiter, nameElements);
       }

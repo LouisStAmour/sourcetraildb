@@ -241,6 +241,19 @@ var SymbolBuilder = /** @class */ (function () {
                     new i.NameElement(nameElements)
                 ]);
             }
+            else if (nameElements &&
+                nameElements.length > 0 &&
+                typeof nameElements[0] === "string") {
+                this.nameHierarchy = new i.NameHierarchy(nameDelimiter, nameElements.map(function (n) { return new i.NameElement(n); }));
+            }
+            else if (nameElements &&
+                nameElements.length > 0 &&
+                nameElements[0].length > 0) {
+                this.nameHierarchy = new i.NameHierarchy(nameDelimiter, nameElements.map(function (_a) {
+                    var prefix = _a[0], name = _a[1], postfix = _a[2];
+                    return new i.NameElement(prefix, name, postfix);
+                }));
+            }
             else {
                 this.nameHierarchy = new i.NameHierarchy(nameDelimiter, nameElements);
             }
